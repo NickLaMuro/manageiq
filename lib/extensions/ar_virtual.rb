@@ -405,6 +405,7 @@ module VirtualAttributes
 
     def define_virtual_attribute(name, cast_type, uses: nil, arel: nil)
       attribute_types[name] = cast_type
+      _default_attributes[name] = ActiveRecord::Attribute.uninitialized(name, cast_type)
       define_virtual_include name, uses if uses
       define_virtual_arel name, arel if arel
     end
