@@ -53,6 +53,10 @@ class ActsAsArModel
         @attribute_types ||= Hash.new(ActiveModel::Type::Value.new)
       end
 
+      def _default_attributes
+        @default_attributes ||= ActiveRecord::AttributeSet.new({})
+      end
+
       def attribute_names
         load_schema
         attribute_types.keys
