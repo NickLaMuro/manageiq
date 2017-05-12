@@ -5,7 +5,8 @@ module RequireNested
 
     filename = "#{self}::#{name}".underscore
     filename = name.to_s.underscore if self == Object
-    if Rails.application.config.cache_classes
+    filename.gsub!("manage_iq", "manageiq")
+    if defined?(Rails) and Rails.application.config.cache_classes
       autoload name, filename
     else
       require_dependency filename
