@@ -101,7 +101,7 @@ class ExtManagementSystem < ApplicationRecord
   include RelationshipMixin
   self.default_relationship_type = "ems_metadata"
 
-  include AggregationMixin
+  # include AggregationMixin
 
   include AuthenticationMixin
   include Metric::CiMixin
