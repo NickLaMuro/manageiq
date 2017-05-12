@@ -359,6 +359,9 @@ class MiqWorker::Runner
   end
 
   def heartbeat
+    # no-op heartbeat for this branch since we don't have DRB running
+    return
+
     now = Time.now.utc
     # Heartbeats can be expensive, so do them only when needed
     return if @last_hb.kind_of?(Time) && (@last_hb + worker_settings[:heartbeat_freq]) >= now
