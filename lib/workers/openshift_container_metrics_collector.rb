@@ -6,21 +6,40 @@ $:.push(File.expand_path("../../app/models/mixins", File.dirname(__FILE__))) # B
 require File.expand_path("../../config/boot", File.dirname(__FILE__))
 require File.expand_path("../../config/preinitializer", File.dirname(__FILE__))
 
+require "miq_helper"
+
 # FIXME: Make this not necessary
 module Vmdb
 end
 
+require "vmdb/global_methods"
+include Vmdb::GlobalMethods
+
 require "active_support/core_ext/module/delegation"
-require "vmdb/logging"
-require "vmdb/deprecation"
+require "active_support/core_ext/numeric/bytes"
 require "active_record"
+require "vmdb/logging"
+
+Vmdb::Loggers.init
+
+require "vmdb/deprecation"
+require "vmdb/inflections"
 require "manageiq-gems-pending"
 require "util/extensions/miq-module"
 require "default_value_for"
 
-require "miq_helper"
 require "extensions/miq_db_config"
-require "vmdb/settings/walker"
+
+require "config"
+Vmdb::Inflections.load_inflections
+Config.load_and_set_settings(Config.setting_files(Miq.root.join('config'), ::Miq.env))
+
+require "vmdb/settings"
+require "vmdb/config"
+require "vmdb/plugins"
+
+Vmdb::Settings.init
+Vmdb::Loggers.apply_config(::Settings.log)
 
 # TODO: Split this out
 class ConnectionInfo
@@ -44,6 +63,7 @@ require "extensions/ar_taggable"         # Is this needed by the worker?
 require "extensions/as_include_concern"
 require "extensions/virtual_total"
 require "extensions/require_nested"
+require "extensions/ar_adapter/ar_dba/postgresql"
 
 # FIXME:  Do this somewhere else, or try to not use ApplicationRecord (if possible)
 class ApplicationRecord < ActiveRecord::Base
@@ -71,7 +91,7 @@ require "mixins/filterable_mixin"        # shouldn't be needed for a worker
 require "mixins/event_mixin"
 require "mixins/miq_policy_mixin"
 require "mixins/relationship_mixin"
-# require "mixins/aggregation_mixin"       # Maybe avoid this..
+require "mixins/aggregation_mixin"       # Maybe avoid this..
 require "mixins/authentication_mixin"
 require "mixins/async_delete_mixin"
 # require "mixins/scanning_operations_mixin"
@@ -90,6 +110,12 @@ require "mixins/per_ems_type_worker_mixin"
 require "mixins/archived_mixin"
 require "mixins/purging_mixin"
 require "mixins/tenant_identity_mixin"
+
+# required for MiqServer
+require "mixins/configuration_management_mixin"
+
+# required for MiqRegion
+require "mixins/naming_sequence_mixin"
 
 require "uuid_mixin"
 
@@ -133,6 +159,16 @@ $:.push(File.join(Gem::Specification.find_by_name('manageiq-providers-kubernetes
 $:.push(File.join(Gem::Specification.find_by_name('manageiq-providers-openshift').gem_dir, "app", "models"))
 
 require "job"
+require "miq_server"
+require "zone"
+require "miq_region"
+require "server_role"
+require "miq_queue"
+require "settings_change"
+require "authenticator"
+require "session"
+
+require "assigned_server_role"
 require "miq_worker"
 require "miq_worker/runner"
 require "miq_queue_worker_base"
@@ -168,4 +204,7 @@ require "manageiq/providers/openshift/container_manager_mixin"
 require "manageiq/providers/openshift/container_manager"
 require "manageiq/providers/openshift/container_manager/metrics_collector_worker"
 
-puts "WE DID IT!"
+# puts "WE DID IT!"
+
+worker = ManageIQ::Providers::Openshift::ContainerManager::MetricsCollectorWorker.create_worker_record
+worker.class::Runner.new({:guid => worker.guid}).do_work_loop
