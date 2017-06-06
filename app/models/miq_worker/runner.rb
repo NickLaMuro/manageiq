@@ -11,6 +11,7 @@ class MiqWorker::Runner
 
   INTERRUPT_SIGNALS = ["SIGINT", "SIGTERM"]
 
+  # DELETE ME
   OPTIONS_PARSER_SETTINGS = [
     [:guid,       'EVM Worker GUID',       String],
   ]
@@ -40,9 +41,9 @@ class MiqWorker::Runner
     INTERRUPT_SIGNALS
   end
 
-  def initialize(cfg = {})
-    @cfg = cfg
-    @cfg[:guid] ||= ENV['MIQ_GUID']
+  def initialize(*args)
+    # TODO: delete @cfg
+    @cfg = {:guid => args.first}
 
     $log ||= Rails.logger
 
