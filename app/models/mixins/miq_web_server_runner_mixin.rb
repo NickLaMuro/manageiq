@@ -17,6 +17,7 @@ module MiqWebServerRunnerMixin
 
   module ClassMethods
     def start_worker(*args)
+      $log.info("#{self.name} $LOADED_FEATURES: #{$LOADED_FEATURES.length}")
       runner = self.new(*args)
       _log.info("URI: #{runner.worker.uri}")
 

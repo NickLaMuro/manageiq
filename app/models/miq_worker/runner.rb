@@ -19,6 +19,7 @@ class MiqWorker::Runner
   SAFE_SLEEP_SECONDS = 60
 
   def self.start_worker(*args)
+    $log.info("#{self.name} $LOADED_FEATURES: #{$LOADED_FEATURES.length}")
     new(*args).start
   end
 
