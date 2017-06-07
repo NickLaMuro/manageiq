@@ -347,12 +347,12 @@ class MiqWorker < ApplicationRecord
   end
 
   def self.build_command_line(guid)
-    command_line = "#{Gem.ruby} #{runner_script} #{guid}"
+    command_line = "#{Gem.ruby} #{runner_script} --heartbeat --guid=#{guid} #{self.name}"
     ENV['APPLIANCE'] ? "nice #{nice_increment} #{command_line}" : command_line
   end
 
   def self.runner_script
-    script = Rails.root.join("lib/workers/bin", "#{self.name.demodulize.tableize.singularize}.rb")
+    script = ManageIQ.root.join("lib/workers/bin/run_single_worker.rb")
     raise "script not found: #{script}" unless File.exist?(script)
     script
   end

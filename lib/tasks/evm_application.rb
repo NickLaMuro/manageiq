@@ -102,8 +102,9 @@ class EvmApplication
            w.miq_server_id,
            w.queue_name || w.uri,
            w.started_on && w.started_on.iso8601,
-           w.last_heartbeat && w.last_heartbeat.iso8601,
-           (w.proportional_set_size || w.memory_usage) / 1.megabyte]
+           w.last_heartbeat && w.last_heartbeat.iso8601]
+           # w.last_heartbeat && w.last_heartbeat.iso8601,
+           # (w.proportional_set_size || w.memory_usage) / 1.megabyte]
       end
     end
 
