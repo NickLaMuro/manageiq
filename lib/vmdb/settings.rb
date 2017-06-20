@@ -1,4 +1,5 @@
 require 'config'
+require 'manageiq'
 require_dependency 'patches/config_patch'
 require_dependency 'vmdb/settings/database_source'
 require_dependency 'vmdb/settings/hash_differ'
@@ -9,7 +10,7 @@ module Vmdb
     extend Vmdb::SettingsWalker::ClassMethods
 
     PASSWORD_FIELDS = Vmdb::SettingsWalker::PASSWORD_FIELDS
-    DUMP_LOG_FILE   = Rails.root.join("log/last_settings.txt").freeze
+    DUMP_LOG_FILE   = ManageIQ.root.join("log/last_settings.txt").freeze
 
     cattr_accessor :last_loaded
 
@@ -105,7 +106,7 @@ module Vmdb
     private_class_method :build_without_local
 
     def self.template_roots
-      Vmdb::Plugins.instance.vmdb_plugins.each_with_object([Rails.root.join('config')]) do |plugin, roots|
+      Vmdb::Plugins.instance.vmdb_plugins.each_with_object([ManageIQ.root.join('config')]) do |plugin, roots|
         roots << plugin.root.join('config')
       end
     end
@@ -115,8 +116,8 @@ module Vmdb
       template_roots.each_with_object([]) do |root, sources|
         sources.push(
           root.join("settings.yml").to_s,
-          root.join("settings/#{Rails.env}.yml").to_s,
-          root.join("environments/#{Rails.env}.yml").to_s
+          root.join("settings/#{ManageIQ.env}.yml").to_s,
+          root.join("environments/#{ManageIQ.env}.yml").to_s
         )
       end
     end
@@ -126,8 +127,8 @@ module Vmdb
       template_roots.each_with_object([]) do |root, sources|
         sources.push(
           root.join("settings.local.yml").to_s,
-          root.join("settings/#{Rails.env}.local.yml").to_s,
-          root.join("environments/#{Rails.env}.local.yml").to_s
+          root.join("settings/#{ManageIQ.env}.local.yml").to_s,
+          root.join("environments/#{ManageIQ.env}.local.yml").to_s
         )
       end
     end
