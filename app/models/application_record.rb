@@ -3,7 +3,7 @@ require 'activerecord-id_regions'
 class ApplicationRecord < ActiveRecord::Base
   self.abstract_class = true
 
-  FIXTURE_DIR = Rails.root.join("db/fixtures")
+  FIXTURE_DIR = ManageIQ.root.join("db/fixtures")
 
   include ActiveRecord::IdRegions
   include ArRegion
