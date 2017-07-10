@@ -43,7 +43,7 @@ module Vmdb
       $audit_log         = AuditLogger.new(path_dir.join("audit.log"))
       $container_log     = ContainerLogger.new
       $log               = create_multicast_logger(path_dir.join("evm.log"))
-      $rails_log         = create_multicast_logger(path_dir.join("#{Rails.env}.log"))
+      $rails_log         = create_multicast_logger(path_dir.join("#{ManageIQ.env}.log"))
       $fog_log           = create_multicast_logger(path_dir.join("fog.log"), FogLogger)
       $policy_log        = create_multicast_logger(path_dir.join("policy.log"))
       $vim_log           = create_multicast_logger(path_dir.join("vim.log"))
