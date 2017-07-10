@@ -1,3 +1,5 @@
+require "more_core_extensions/core_ext/hash/nested"
+
 module Vmdb
   class Plugins
     include Singleton
