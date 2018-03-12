@@ -41,17 +41,48 @@ module CustomAttributeMixin
     def self.add_custom_attribute(custom_attribute)
       return if respond_to?(custom_attribute)
 
-      virtual_column(custom_attribute.to_sym, :type => :string, :uses => :custom_attributes)
+      ca_method_name       = custom_attribute.to_sym
+      ca_where_method_name = "#{custom_attribute}_where_args".to_sym
+      _without_prefix      = custom_attribute.sub(CUSTOM_ATTRIBUTES_PREFIX, "")
+      ca_sql_col_name      = _without_prefix.tr("-.:", "_").downcase
+      ca_name, ca_section  = _without_prefix.split(SECTION_SEPARATOR).map do |col_val|
+                               Arel::Nodes::SqlLiteral.new("'#{col_val}'")
+                             end
 
-      define_method(custom_attribute.to_sym) do
-        custom_attribute_without_prefix           = custom_attribute.sub(CUSTOM_ATTRIBUTES_PREFIX, "")
-        custom_attribute_without_section, section = custom_attribute_without_prefix.split(SECTION_SEPARATOR)
+      virtual_attr_arel = lambda do |t|
+        ca_table      = CustomAttribute.arel_table
+        resource_name = Arel::Nodes::SqlLiteral.new("'#{self.name}'")
 
-        where_args = {}
-        where_args[:name]    = custom_attribute_without_section
-        where_args[:section] = section if section
+        ca_resource_filter = ca_table[:resource_id].eq(t[:id]).and(
+                               ca_table[:resource_type].eq(resource_name)
+                             )
 
-        custom_attributes.find_by(where_args).try(:value)
+        ca_table.project(ca_table[:value])
+                .where(send(ca_where_method_name).and(ca_resource_filter))
+                .as(ca_sql_col_name)
+      end
+
+      virtual_attribute(ca_method_name,
+                        :string,
+                        :uses => :custom_attributes,
+                        :arel => virtual_attr_arel
+                       )
+
+      define_singleton_method(ca_where_method_name) do
+        ca_table = CustomAttribute.arel_table
+        where_clause = ca_table[:name].eq(ca_name)
+        where_clause = where_clause.and(ca_table[:section].eq(ca_section))
+        where_clause
+      end
+      private_class_method ca_where_method_name
+
+      define_method(ca_method_name) do
+        if has_attribute?(ca_sql_col_name)
+          self[ca_sql_col_name]
+        else
+          custom_attributes.find_by(self.class.send(ca_where_method_name))
+                           .try(:value)
+        end
       end
     end
   end
