@@ -17,10 +17,10 @@ module Spec
 
         Array(resources).each do |resource|
           times.each do |time|
-            metric_rollup_params[:timestamp]     = time
-            metric_rollup_params[:resource_id]   = resource.id
-            metric_rollup_params[:resource_name] = resource.name
-            params = ([:metric_rollup_vm_hr] + trait + [metric_rollup_params]).compact
+            attrs  = metric_rollup_params.merge(:timestamp     => time,
+                                                :resource_id   => resource.id,
+                                                :resource_name => resource.name)
+            params = ([:metric_rollup_vm_hr] + trait + [attrs]).compact
 
             resource.metric_rollups << FactoryBot.create(*params)
           end
