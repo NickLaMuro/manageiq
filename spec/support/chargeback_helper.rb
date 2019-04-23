@@ -13,16 +13,16 @@ module Spec
       end
 
       def add_metric_rollups_for(resources, range, step, metric_rollup_params, trait = [:with_data])
+        args  = ([:metric_rollup_vm_hr] + trait).compact
         times = range.step_value(step)
 
         Array(resources).each do |resource|
           attrs  = metric_rollup_params.merge(:resource_id   => resource.id,
                                               :resource_name => resource.name)
-          params = ([:metric_rollup_vm_hr] + trait + [attrs]).compact
 
           times.each do |time|
             attrs[:timestamp] = time
-            resource.metric_rollups << FactoryBot.create(*params)
+            resource.metric_rollups << FactoryBot.create(*args, attrs)
           end
         end
       end
