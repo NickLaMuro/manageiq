@@ -57,18 +57,34 @@ describe ChargebackVm do
     metric_rollup_records.pluck(*ChargeableField.cols_on_metric_rollup)
   end
 
-  before do
+  before(:context) do
     MiqRegion.seed
     ChargebackRateDetailMeasure.seed
     ChargeableField.seed
     ManageIQ::Showback::InputMeasure.seed
     MiqEnterprise.seed
 
-    EvmSpecHelper.create_guid_miq_server_zone
     cat = FactoryBot.create(:classification, :description => "Environment", :name => "environment", :single_value => true, :show => true)
     c = FactoryBot.create(:classification, :name => "prod", :description => "Production", :parent_id => cat.id)
+  end
+
+  after(:context) do
+    MiqRegion.delete_all
+    ChargebackRateDetailMeasure.delete_all
+    ChargeableField.delete_all
+    ManageIQ::Showback::InputMeasure.delete_all
+    MiqEnterprise.delete_all
+    Tenant.delete_all
+    MiqServer.delete_all
+    Classification.delete_all
+    # Tag.destroy_all
+  end
+
+  before do
+    EvmSpecHelper.create_guid_miq_server_zone
     @tag = Tag.find_by(:name => "/managed/environment/prod")
 
+    c    = Classification.where(:description => "Production").first
     temp = {:cb_rate => chargeback_rate, :tag => [c, "vm"]}
     ChargebackRate.set_assignments(:compute, [temp])
 
