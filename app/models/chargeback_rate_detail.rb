@@ -54,7 +54,8 @@ class ChargebackRateDetail < ApplicationRecord
                                                                :price_plan  => plan,
                                                                :calculation => calculation,
                                                                :concept     => rate_detail.id)
-    showback_rate.tiers.destroy_all
+    # showback_rate.tiers.destroy_all
+    showback_rate.tiers.delete_all
     rate_detail.chargeback_tiers.each do |tier|
       showback_rate.tiers.build(:tier_start_value       => tier.start,
                                 :tier_end_value         => tier.finish,
