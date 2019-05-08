@@ -1,5 +1,7 @@
 require 'util/runcmd'
 describe EvmDatabaseOps do
+  include Spec::Support::FakeTmpdirHelper
+
   let(:file_storage) { double("MiqSmbSession", :disconnect => nil) }
   let(:local_backup) { "/tmp/backup_1" }
   let(:input_path)   { "foo/bar/mkfifo" }
@@ -45,11 +47,22 @@ describe EvmDatabaseOps do
     end
 
     it "without enough free space" do
+      # "unstub" methods needed for this spec
+      allow(MiqUtil).to        receive(:runcmd).and_call_original
+      allow(EvmDatabaseOps).to receive(:backup_destination_free_space).and_call_original
+
       EvmSpecHelper.create_guid_miq_server_zone
-      allow(EvmDatabaseOps).to receive(:backup_destination_free_space).and_return(100.megabytes)
+      uri_to_local_path = File.join(fake_tmp_dir, File.basename(@connect_opts[:uri]))
+
+      allow(file_storage).to   receive(:class).and_return(MiqSmbSession)
+      allow(file_storage).to   receive(:uri_to_local_path).and_return(uri_to_local_path)
       allow(EvmDatabaseOps).to receive(:database_size).and_return(200.megabytes)
-      expect { EvmDatabaseOps.backup(@db_opts, @connect_opts) }.to raise_error(MiqException::MiqDatabaseBackupInsufficientSpace)
-      expect(MiqQueue.where(:class_name => "MiqEvent", :method_name => "raise_evm_event").count).to eq(1)
+      expect(PostgresAdmin).to receive(:backup_pg_dump).never
+
+      with_fake_tmp do
+        expect { EvmDatabaseOps.backup(@db_opts, @connect_opts) }.to raise_error(MiqException::MiqDatabaseBackupInsufficientSpace)
+        expect(MiqQueue.where(:class_name => "MiqEvent", :method_name => "raise_evm_event").count).to eq(1)
+      end
     end
 
     it "remotely" do
@@ -73,6 +86,15 @@ describe EvmDatabaseOps do
       run_db_ops[:dbname] = "vmdb_production"
       allow(described_class).to receive(:backup_file_name).and_return("miq_backup")
       expect(PostgresAdmin).to receive(:backup).with(run_db_ops)
+
+      # This is now required after moving validate_free_space to inside the
+      # with_file_storage method, and wrapping it in a class check of:
+      #
+      #     if file_storage.class <= MiqGenericMountSession
+      #
+      # This "stubs the stub" to have it act like a MiqSmbSession, when in
+      # fact, it isn't.
+      allow(file_storage).to receive(:class).and_return(MiqSmbSession)
 
       log_stub = instance_double("_log")
       expect(described_class).to receive(:_log).twice.and_return(log_stub)
@@ -120,12 +142,22 @@ describe EvmDatabaseOps do
     end
 
     it "without enough free space" do
+      # "unstub" methods needed for this spec
+      allow(MiqUtil).to        receive(:runcmd).and_call_original
+      allow(EvmDatabaseOps).to receive(:backup_destination_free_space).and_call_original
+
       EvmSpecHelper.create_guid_miq_server_zone
-      allow(EvmDatabaseOps).to receive(:backup_destination_free_space).and_return(100.megabytes)
+      uri_to_local_path = File.join(fake_tmp_dir, File.basename(@connect_opts[:uri]))
+
+      allow(file_storage).to   receive(:class).and_return(MiqSmbSession)
+      allow(file_storage).to   receive(:uri_to_local_path).and_return(uri_to_local_path)
       allow(EvmDatabaseOps).to receive(:database_size).and_return(200.megabytes)
       expect(PostgresAdmin).to receive(:backup_pg_dump).never
-      expect { EvmDatabaseOps.dump(@db_opts, @connect_opts) }.to raise_error(MiqException::MiqDatabaseBackupInsufficientSpace)
-      expect(MiqQueue.where(:class_name => "MiqEvent", :method_name => "raise_evm_event").count).to eq(1)
+
+      with_fake_tmp do
+        expect { EvmDatabaseOps.dump(@db_opts, @connect_opts) }.to raise_error(MiqException::MiqDatabaseBackupInsufficientSpace)
+        expect(MiqQueue.where(:class_name => "MiqEvent", :method_name => "raise_evm_event").count).to eq(1)
+      end
     end
 
     it "remotely" do
