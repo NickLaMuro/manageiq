@@ -12,41 +12,28 @@ module ManageIQ::Providers::EmbeddedAnsible::CrudCommon
         :args        => args,
         :class_name  => name,
         :method_name => method_name,
-        :role        => "ems_operations",  # TODO: This should go to a git_owner
+        :role        => "ems_operations", # TODO: This should go to a git_owner
         :zone        => zone
       }
       queue_opts[:instance_id] = instance_id if instance_id
       MiqTask.generic_action_with_callback(task_opts, queue_opts)
     end
 
-    def notify(op, manager_id, params)
+    def notify(op_type, manager_id, params)
       error = nil
       yield
-    rescue => error
-      _log.debug error.result.error if error.is_a?(AwesomeSpawn::CommandResultError)
+    rescue StandardError => e
+      _log.debug(error.result.error) if e.kind_of?(AwesomeSpawn::CommandResultError)
       raise
     ensure
-      send_notification(op, manager_id, params, error.nil?) if notify_on_provider_interaction?
+      send_notification(op_type, manager_id, params, error.nil?) if notify_on_provider_interaction?
     end
 
     def notify_on_provider_interaction?
       false
     end
 
-    private def send_notification(op, manager_id, params, success)
-      op_arg = params.except(:name, :manager_ref).collect { |k, v| "#{k}=#{v}" }.join(', ')
-      _log.send(success ? :info : :error, "#{name} #{op} with parameters: #{op_arg.inspect} #{success ? 'succeeded' : 'failed'}")
-      Notification.create!(
-        :type    => success ? :tower_op_success : :tower_op_failure,
-        :options => {
-          :op_name => "#{self::FRIENDLY_NAME} #{op}",
-          :op_arg  => "(#{op_arg})",
-          :tower   => "EMS(manager_id=#{manager_id})"
-        }
-      )
-    end
-
-    def raw_create_in_provider(manager, params)
+    def raw_create_in_provider(_manager, _params)
       raise NotImplementedError, "must be implemented in a subclass"
     end
 
@@ -62,6 +49,21 @@ module ManageIQ::Providers::EmbeddedAnsible::CrudCommon
       action = "Creating #{self::FRIENDLY_NAME}"
       action << " (name=#{params[:name]})" if params[:name]
       queue(manager.my_zone, nil, "create_in_provider", [manager_id, params], action, auth_user)
+    end
+
+    private
+
+    def send_notification(op_type, manager_id, params, success)
+      op_arg = params.except(:name, :manager_ref).collect { |k, v| "#{k}=#{v}" }.join(', ')
+      _log.send(success ? :info : :error, "#{name} #{op_type} with parameters: #{op_arg.inspect} #{success ? 'succeeded' : 'failed'}")
+      Notification.create!(
+        :type    => success ? :tower_op_success : :tower_op_failure,
+        :options => {
+          :op_name => "#{self::FRIENDLY_NAME} #{op_type}",
+          :op_arg  => "(#{op_arg})",
+          :tower   => "EMS(manager_id=#{manager_id})"
+        }
+      )
     end
   end
 
@@ -103,7 +105,7 @@ module ManageIQ::Providers::EmbeddedAnsible::CrudCommon
     self.class.queue(manager.my_zone, id, method_name, args, action, auth_user)
   end
 
-  def notify(op, params = {}, &block)
-    self.class.notify(op, manager_id, params, &block)
+  def notify(op_type, params = {}, &block)
+    self.class.notify(op_type, manager_id, params, &block)
   end
 end

@@ -3,11 +3,11 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Job < ManageIQ::P
 
   require_nested :Status
 
-  belongs_to :ext_management_system, :foreign_key => :ems_id, :class_name => "ManageIQ::Providers::AutomationManager"
-  belongs_to :job_template, :foreign_key => :orchestration_template_id, :class_name => "ConfigurationScript"
-  belongs_to :playbook, :foreign_key => :configuration_script_base_id
+  belongs_to :ext_management_system, :foreign_key => :ems_id, :class_name => "ManageIQ::Providers::AutomationManager", :inverse_of => false
+  belongs_to :job_template, :foreign_key => :orchestration_template_id, :class_name => "ConfigurationScript", :inverse_of => false
+  belongs_to :playbook, :foreign_key => :configuration_script_base_id, :inverse_of => false
 
-  belongs_to :miq_task, :foreign_key => :ems_ref
+  belongs_to :miq_task, :foreign_key => :ems_ref, :inverse_of => false
 
   #
   # Allowed options are
@@ -26,24 +26,14 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Job < ManageIQ::P
   def self.raw_create_stack(template, options = {})
     options = reconcile_extra_vars_keys(template, options)
     template.run(options)
-  rescue => err
-    _log.error("Failed to create job from template(#{template.name}), error: #{err}")
-    raise MiqException::MiqOrchestrationProvisionError, err.to_s, err.backtrace
+  rescue StandardError => e
+    _log.error("Failed to create job from template(#{template.name}), error: #{e}")
+    raise MiqException::MiqOrchestrationProvisionError, e.to_s, e.backtrace
   end
 
   class << self
     alias create_job create_stack
     alias raw_create_job raw_create_stack
-  end
-
-  private def update_with_provider_object(raw_job)
-    self.miq_task ||= raw_job.miq_task
-
-    update_attributes!(
-      :status      => miq_task.state,
-      :start_time  => miq_task.started_on,
-      :finish_time => raw_status.completed? ? miq_task.updated_on : nil
-    )
   end
 
   def raw_status
@@ -56,18 +46,6 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Job < ManageIQ::P
     when "html" then raw_stdout_html
     else             raw_stdout_txt
     end
-  end
-
-  private def raw_stdout_json
-    miq_task.context_data[:ansible_runner_stdout]
-  end
-
-  private def raw_stdout_txt
-    raw_stdout_json.collect { |j| j["stdout"] }.join("\n")
-  end
-
-  private def raw_stdout_html
-    TerminalToHtml.render(raw_stdout_txt)
   end
 
   def refresh_ems
@@ -114,7 +92,30 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Job < ManageIQ::P
   # If extra_vars are passed through automate, all keys are considered as attributes and
   # converted to lower case. Need to convert them back to original definitions in the
   # job template through survey_spec or variables
-  def self.reconcile_extra_vars_keys(template, options)
+  def self.reconcile_extra_vars_keys(_template, options)
     options
+  end
+  private_class_method :reconcile_extra_vars_keys
+
+  def update_with_provider_object(raw_job)
+    self.miq_task ||= raw_job.miq_task
+
+    update_attributes!(
+      :status      => miq_task.state,
+      :start_time  => miq_task.started_on,
+      :finish_time => raw_status.completed? ? miq_task.updated_on : nil
+    )
+  end
+
+  def raw_stdout_json
+    miq_task.context_data[:ansible_runner_stdout]
+  end
+
+  def raw_stdout_txt
+    raw_stdout_json.collect { |j| j["stdout"] }.join("\n")
+  end
+
+  def raw_stdout_html
+    TerminalToHtml.render(raw_stdout_txt)
   end
 end

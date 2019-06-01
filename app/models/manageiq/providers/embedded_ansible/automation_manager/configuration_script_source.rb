@@ -1,9 +1,9 @@
 class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScriptSource < ManageIQ::Providers::EmbeddedAutomationManager::ConfigurationScriptSource
   FRIENDLY_NAME = "Ansible Automation Inside Project".freeze
-  REPO_DIR      = Rails.root.join("tmp/git_repos")
+  REPO_DIR      = Rails.root.join("tmp", "git_repos")
 
   validates :name,       :presence => true # TODO: unique within region?
-  validates :scm_type,   :presence => true, :inclusion => { :in => %w(git) }
+  validates :scm_type,   :presence => true, :inclusion => { :in => %w[git] }
   validates :scm_branch, :presence => true
 
   default_value_for :scm_type,   "git"
@@ -23,11 +23,7 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
     params.delete(:scm_type)   if params[:scm_type].blank?
     params.delete(:scm_branch) if params[:scm_branch].blank?
 
-    transaction do
-      create!(params.merge(:manager => manager)).tap do |source|
-        source.sync
-      end
-    end
+    transaction { create!(params.merge(:manager => manager)).tap(&:sync) }
   end
 
   def raw_update_in_provider(params)
@@ -59,36 +55,38 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
     args = {:params => params, :chdir => repo_dir}
     args.delete(:chdir) unless chdir
     AwesomeSpawn.run!("git", args).tap do |result|
-      _log.debug result.output
+      _log.debug(result.output)
     end
   end
 
   def ensure_clone
-    _log.info "Ensuring presence of git repo #{scm_url.inspect}..."
+    _log.info("Ensuring presence of git repo #{scm_url.inspect}...")
 
     if !repo_dir.exist?
-      _log.info "Cloning git repo #{scm_url.inspect}..."
+      _log.info("Cloning git repo #{scm_url.inspect}...")
       git("clone", scm_url, repo_dir, :chdir => false)
     else
-      _log.info "Fetching latest from #{scm_url.inspect}..."
+      _log.info("Fetching latest from #{scm_url.inspect}...")
       git("remote", "set-url", "origin", scm_url) # In case the url has changed
       git("fetch")
     end
 
-    _log.info "Checking out #{scm_branch.inspect}..."
+    _log.info("Checking out #{scm_branch.inspect}...")
     git("checkout", scm_branch)
     git("reset", :hard, "origin/#{scm_branch}")
 
-    _log.info "Ensuring presence of git repo #{scm_url.inspect}...Complete"
+    _log.info("Ensuring presence of git repo #{scm_url.inspect}...Complete")
   end
 
   def remove_clone
     return unless repo_dir.exist?
+
     dir = repo_dir.to_s
-    _log.info "Ensuring removal of git repo located at #{dir.inspect}..."
+    _log.info("Ensuring removal of git repo located at #{dir.inspect}...")
     raise ArgumentError, "invalid repo dir #{dir.inspect}" unless dir.start_with?(REPO_DIR.to_s)
+
     FileUtils.rm_rf(dir)
-    _log.info "Ensuring removal of git repo located at #{dir.inspect}...Complete"
+    _log.info("Ensuring removal of git repo located at #{dir.inspect}...Complete")
   end
 
   def sync_playbooks
@@ -109,7 +107,11 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
   def playbooks_in_repo_dir
     Dir.glob(repo_dir.join("*.y{a,}ml")).collect do |file|
       name = File.basename(file)
-      description = YAML.safe_load(File.read(file)).fetch_path(0, "name") rescue nil
+      description = begin
+                      YAML.safe_load(File.read(file)).fetch_path(0, "name")
+                    rescue StandardError
+                      nil
+                    end
       {:name => name, :description => description, :manager_id => manager_id}
     end
   end

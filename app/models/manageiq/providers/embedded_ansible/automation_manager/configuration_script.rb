@@ -31,7 +31,7 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
   def run(vars = {})
     options = vars.merge(merge_extra_vars(vars[:extra_vars]))
 
-    ManageIQ::Providers::AnsiblePlaybookWorkflow.create_job({}, options[:extra_vars], {:playbook_path => parent.path}).tap do |job|
+    ManageIQ::Providers::AnsiblePlaybookWorkflow.create_job({}, options[:extra_vars], :playbook_path => parent.path).tap do |job|
       job.signal(:start)
     end
   end
