@@ -29,9 +29,11 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
   end
 
   def run(vars = {})
-    options = vars.merge(merge_extra_vars(vars[:extra_vars]))
+    workflow      = ManageIQ::Providers::AnsiblePlaybookWorkflow
+    extra_vars    = merge_extra_vars(vars[:extra_vars])
+    playbook_vars = { :playbook_path => parent.path }
 
-    ManageIQ::Providers::AnsiblePlaybookWorkflow.create_job({}, options[:extra_vars], :playbook_path => parent.path).tap do |job|
+    workflow.create_job({}, extra_vars, playbook_vars).tap do |job|
       job.signal(:start)
     end
   end
@@ -43,6 +45,7 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
       match_data = v.kind_of?(String) && /password::/.match(v)
       hash[k] = match_data ? ManageIQ::Password.decrypt(v.gsub(/password::/, '')) : v
     end
-    {:extra_vars => extra_vars}
+
+    extra_vars
   end
 end

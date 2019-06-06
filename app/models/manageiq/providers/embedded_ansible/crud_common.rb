@@ -10,6 +10,7 @@ module ManageIQ::Providers::EmbeddedAnsible::CrudCommon
 
       queue_opts = {
         :args        => args,
+        :priority    => MiqQueue::HIGH_PRIORITY,
         :class_name  => name,
         :method_name => method_name,
         :role        => "ems_operations", # TODO: This should go to a git_owner
