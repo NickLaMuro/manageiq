@@ -8,7 +8,7 @@ module ManageIQ::Providers::EmbeddedAnsible::Seeding
         :name => "Embedded Ansible"
       )
 
-      manager = provider.automation_manager || provider.build_automation_manager
+      manager = provider.automation_manager
       manager.update!(
         :name => "Embedded Ansible",
         :zone => MiqServer.my_server.zone # TODO: Do we even need zone?
