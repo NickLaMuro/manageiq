@@ -13,7 +13,7 @@ module ManageIQ::Providers::EmbeddedAnsible::CrudCommon
         :priority    => MiqQueue::HIGH_PRIORITY,
         :class_name  => name,
         :method_name => method_name,
-        :role        => "ems_operations", # TODO: This should go to a git_owner
+        :role        => "embedded_ansible",
         :zone        => zone
       }
       queue_opts[:instance_id] = instance_id if instance_id
