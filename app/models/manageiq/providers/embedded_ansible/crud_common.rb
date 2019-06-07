@@ -23,8 +23,8 @@ module ManageIQ::Providers::EmbeddedAnsible::CrudCommon
     def notify(op_type, manager_id, params)
       error = nil
       yield
-    rescue StandardError => e
-      _log.debug(error.result.error) if e.kind_of?(AwesomeSpawn::CommandResultError)
+    rescue StandardError => error
+      _log.debug(error.result.error) if error.kind_of?(AwesomeSpawn::CommandResultError)
       raise
     ensure
       send_notification(op_type, manager_id, params, error.nil?) if notify_on_provider_interaction?
