@@ -11,4 +11,8 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Credential < Mana
   def self.provider_params(params)
     super.merge(:organization => ManageIQ::Providers::EmbeddedAnsible::AutomationManager.first.provider.default_organization)
   end
+
+  def self.notify_on_provider_interaction?
+    true
+  end
 end
