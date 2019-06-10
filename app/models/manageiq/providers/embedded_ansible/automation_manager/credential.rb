@@ -15,4 +15,8 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Credential < Mana
   def self.notify_on_provider_interaction?
     true
   end
+
+  def native_ref
+    Integer(manager_ref)
+  end
 end
