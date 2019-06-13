@@ -26,6 +26,11 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Credential < Mana
     create!(params_to_attributes(params))
   end
 
+  def self.notification_excludes
+    [:password, :auth_key, :service_account]
+  end
+  private_class_method :notification_excludes
+
   def raw_update_in_provider(params)
     update!(self.class.params_to_attributes(params.except(:task_id, :miq_task_id)))
   end
