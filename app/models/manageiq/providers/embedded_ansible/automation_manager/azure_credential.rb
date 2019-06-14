@@ -47,7 +47,36 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::AzureCredential <
     :attributes => API_ATTRIBUTES
   }.freeze
 
+  alias_attribute :secret, :auth_key
+
   def self.display_name(number = 1)
     n_('Credential (Microsoft Azure)', 'Credentials (Microsoft Azure)', number)
+  end
+
+  def self.params_to_attributes(params)
+    attrs = params.reverse_merge(:options => {})
+
+    attrs[:options][:client]       = attrs.delete(:client)
+    attrs[:options][:tenant]       = attrs.delete(:tenant)
+    attrs[:options][:subscription] = attrs.delete(:subscription)
+
+    attrs
+  end
+
+  def self.notification_excludes
+    super + [:secret]
+  end
+  private_class_method :notification_excludes
+
+  def client
+    options[:client]
+  end
+
+  def tenant
+    options[:tenant]
+  end
+
+  def subscription
+    options[:subscription]
   end
 end
