@@ -18,7 +18,18 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::VaultCredential <
     :attributes => API_ATTRIBUTES
   }.freeze
 
+  alias_attribute :vault_password, :password
+
   def self.display_name(number = 1)
     n_('Credential (Vault)', 'Credentials (Vault)', number)
   end
+
+  def self.params_to_attributes(params)
+    params
+  end
+
+  def self.notification_excludes
+    super + [:vault_password]
+  end
+  private_class_method :notification_excludes
 end

@@ -268,4 +268,26 @@ describe ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Credential do
       end
     end
   end
+
+  context "VaultCredential" do
+    it_behaves_like 'an embedded_ansible credential' do
+      let(:credential_class)      { embedded_ansible::VaultCredential }
+      let(:notification_excludes) { base_excludes + [:vault_password] }
+      let(:params_to_attributes)  { params }
+
+      let(:params) do
+        {
+          :name           => "Vault Credential",
+          :vault_password => "secret1"
+        }
+      end
+      let(:expected_values) do
+        {
+          :name               => "Vault Credential",
+          :vault_password     => "secret1",
+          :password_encrypted => ManageIQ::Password.try_encrypt("secret1")
+        }
+      end
+    end
+  end
 end
