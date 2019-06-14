@@ -47,4 +47,26 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::OpenstackCredenti
   def self.display_name(number = 1)
     n_('Credential (OpenStack)', 'Credentials (OpenStack)', number)
   end
+
+  def self.params_to_attributes(params)
+    attrs = params.reverse_merge(:options => {})
+
+    attrs[:options][:host]    = attrs.delete(:host)
+    attrs[:options][:domain]  = attrs.delete(:domain)
+    attrs[:options][:project] = attrs.delete(:project)
+
+    attrs
+  end
+
+  def host
+    options[:host]
+  end
+
+  def domain
+    options[:domain]
+  end
+
+  def project
+    options[:project]
+  end
 end
