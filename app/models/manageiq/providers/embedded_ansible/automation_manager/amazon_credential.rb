@@ -30,7 +30,18 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::AmazonCredential 
     :attributes => API_ATTRIBUTES
   }.freeze
 
+  alias_attribute :security_token, :auth_key
+
   def self.display_name(number = 1)
     n_('Credential (Amazon)', 'Credentials (Amazon)', number)
   end
+
+  def self.params_to_attributes(params)
+    params
+  end
+
+  def self.notification_excludes
+    super + [:security_token]
+  end
+  private_class_method :notification_excludes
 end

@@ -290,4 +290,31 @@ describe ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Credential do
       end
     end
   end
+
+  context "AmazonCredential" do
+    it_behaves_like 'an embedded_ansible credential' do
+      let(:credential_class)      { embedded_ansible::AmazonCredential }
+      let(:notification_excludes) { base_excludes + [:security_token] }
+      let(:params_to_attributes)  { params }
+
+      let(:params) do
+        {
+          :name           => "Amazon Credential",
+          :userid         => "userid",
+          :password       => "secret1",
+          :security_token => "secret2",
+        }
+      end
+      let(:expected_values) do
+        {
+          :name               => "Amazon Credential",
+          :userid             => "userid",
+          :password           => "secret1",
+          :security_token     => "secret2",
+          :password_encrypted => ManageIQ::Password.try_encrypt("secret1"),
+          :auth_key_encrypted => ManageIQ::Password.try_encrypt("secret2")
+        }
+      end
+    end
+  end
 end
