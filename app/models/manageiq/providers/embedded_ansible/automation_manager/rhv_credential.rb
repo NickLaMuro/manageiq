@@ -32,4 +32,14 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::RhvCredential < M
   def self.display_name(number = 1)
     n_('Credential (RHV)', 'Credentials (RHV)', number)
   end
+
+  def self.params_to_attributes(params)
+    attrs = params.reverse_merge(:options => {})
+    attrs[:options][:host] = attrs.delete(:host)
+    attrs
+  end
+
+  def host
+    options[:host]
+  end
 end
