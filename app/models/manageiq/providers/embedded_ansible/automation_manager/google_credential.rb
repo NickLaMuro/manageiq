@@ -37,7 +37,24 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::GoogleCredential 
     :attributes => API_ATTRIBUTES
   }.freeze
 
+  alias_attribute :ssh_key_data, :auth_key
+
   def self.display_name(number = 1)
     n_('Credential (Google)', 'Credentials (Google)', number)
+  end
+
+  def self.params_to_attributes(params)
+    attrs = params.reverse_merge(:options => {})
+    attrs[:options][:project] = attrs.delete(:project)
+    attrs
+  end
+
+  def self.notification_excludes
+    super + [:ssh_key_data]
+  end
+  private_class_method :notification_excludes
+
+  def project
+    options[:project]
   end
 end

@@ -367,4 +367,42 @@ describe ManageIQ::Providers::EmbeddedAnsible::AutomationManager::Credential do
       end
     end
   end
+
+  context "GoogleCredential" do
+    it_behaves_like 'an embedded_ansible credential' do
+      let(:credential_class)      { embedded_ansible::GoogleCredential }
+      let(:notification_excludes) { base_excludes + [:ssh_key_data] }
+
+      let(:params) do
+        {
+          :name         => "Google Credential",
+          :userid       => "userid",
+          :ssh_key_data => "secret1",
+          :project      => "project"
+        }
+      end
+      let(:params_to_attributes) do
+        {
+          :name         => "Google Credential",
+          :userid       => "userid",
+          :ssh_key_data => "secret1",
+          :options      => {
+            :project => "project"
+          }
+        }
+      end
+      let(:expected_values) do
+        {
+          :name               => "Google Credential",
+          :userid             => "userid",
+          :ssh_key_data       => "secret1",
+          :project            => "project",
+          :auth_key_encrypted => ManageIQ::Password.try_encrypt("secret1"),
+          :options            => {
+            :project => "project"
+          }
+        }
+      end
+    end
+  end
 end
