@@ -51,7 +51,26 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::NetworkCredential
     :attributes => API_ATTRIBUTES
   }.freeze
 
+  alias_attribute :ssh_key_data,       :auth_key
+  alias_attribute :ssh_key_unlock,     :auth_key_password
+  alias_attribute :authorize_password, :become_password
+
   def self.display_name(number = 1)
     n_('Credential (Network)', 'Credentials (Network)', number)
   end
+
+  def self.params_to_attributes(params)
+    attrs = params.reverse_merge(:options => {})
+    attrs[:options][:authorize] = attrs.delete(:authorize)
+    attrs
+  end
+
+  def authorize
+    options[:authorize]
+  end
+
+  def self.notification_excludes
+    super + [:ssh_key_data, :ssh_key_unlock, :authorize_password]
+  end
+  private_class_method :notification_excludes
 end
