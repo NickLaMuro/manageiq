@@ -39,7 +39,19 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ScmCredential < M
     :attributes => API_ATTRIBUTES
   }.freeze
 
+  alias_attribute :ssh_key_data,   :auth_key
+  alias_attribute :ssh_key_unlock, :auth_key_password
+
   def self.display_name(number = 1)
     n_('Credential (SCM)', 'Credentials (SCM)', number)
   end
+
+  def self.params_to_attributes(params)
+    params
+  end
+
+  def self.notification_excludes
+    super + [:ssh_key_data, :ssh_key_unlock]
+  end
+  private_class_method :notification_excludes
 end
