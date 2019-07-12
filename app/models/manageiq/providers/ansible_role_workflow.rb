@@ -1,6 +1,7 @@
 class ManageIQ::Providers::AnsibleRoleWorkflow < ManageIQ::Providers::AnsibleRunnerWorkflow
-  def self.job_options(env_vars, extra_vars, role_options, timeout, poll_interval, hosts)
+  def self.job_options(env_vars, extra_vars, role_options, timeout, poll_interval, hosts, credentials)
     {
+      :credentials     => credentials,
       :env_vars        => env_vars,
       :extra_vars      => extra_vars,
       :hosts           => hosts,
@@ -18,7 +19,7 @@ class ManageIQ::Providers::AnsibleRoleWorkflow < ManageIQ::Providers::AnsibleRun
   end
 
   def run_role
-    env_vars, extra_vars, role_name, roles_path, role_skip_facts = options.values_at(:env_vars, :extra_vars, :role_name, :roles_path, :role_skip_facts)
+    credentials, env_vars, extra_vars, role_name, roles_path, role_skip_facts = options.values_at(:credentials, :env_vars, :extra_vars, :role_name, :roles_path, :role_skip_facts)
     role_skip_facts = true if role_skip_facts.nil?
     response = Ansible::Runner.run_role_async(env_vars, extra_vars, role_name, :roles_path => roles_path, :role_skip_facts => role_skip_facts)
     if response.nil?
