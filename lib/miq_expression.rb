@@ -1428,7 +1428,7 @@ class MiqExpression
   end
 
   def extract_where_values(klass, scope)
-    relation = ActiveRecord::Relation.new(klass, klass.arel_table, klass.predicate_builder)
+    relation = ActiveRecord::Relation.new(klass, :table => klass.arel_table, :predicate_builder => klass.predicate_builder)
     relation = relation.instance_eval(&scope)
 
     begin
