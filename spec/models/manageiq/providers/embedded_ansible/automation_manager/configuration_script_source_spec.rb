@@ -213,6 +213,39 @@ describe ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationS
         expect(playbooks_for(record)).to eq(%w[hello_world.yml])
       end
     end
+
+    context "with 'ignorable dirs'" do
+      let(:roles_repo) { File.join(clone_dir, "hello_roles_and_things") }
+
+      let(:roles_repo_structure) do
+        <<~FILES
+          roles/
+            defaults/
+              main.yml
+            meta/
+              main.yml
+            tasks/
+              main.yml
+          tasks/
+            task_1.yml
+            task_2.yml
+          group_vars/
+            vars.yml
+          host_vars/
+            vars.yml
+          hello_world.yml
+        FILES
+      end
+
+      it "finds only playbooks" do
+        Spec::Support::FakeAnsibleRepo.generate(roles_repo, roles_repo_structure)
+
+        params[:scm_url] = "file://#{roles_repo}"
+        record           = build_record
+
+        expect(playbooks_for(record)).to eq(%w[hello_world.yml])
+      end
+    end
   end
 
   describe "#update_in_provider" do

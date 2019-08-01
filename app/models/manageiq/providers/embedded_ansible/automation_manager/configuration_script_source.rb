@@ -92,9 +92,12 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
       git_repository.with_worktree do |worktree|
         worktree.ref = scm_branch
         worktree.blob_list do |root, entry|
+          playbook_filepath = Pathname.new("#{root}#{entry[:name]}")
+
+          next unless playbook_dir?(playbook_filepath)
           next unless playbook?(entry, worktree)
 
-          playbooks << "#{root}#{entry[:name]}"
+          playbooks << playbook_filepath.to_s
         end
       end
     end
@@ -138,5 +141,20 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
     end
 
     false
+  end
+
+  INVALID_DIRS = %w[roles tasks group_vars host_vars].freeze
+
+  # Given a Pathname, determine if it includes invalid directories so it can be
+  # removed from consideration.
+  #
+  # Content borrowed from awx and modified from
+  #
+  #   https://github.com/ansible/awx/blob/128fa894/awx/main/utils/ansible.py#L21-L36
+  #
+  def playbook_dir?(filepath)
+    elements = Pathname.new(filepath).each_filename.to_a
+
+    elements.none? { |el| INVALID_DIRS.include?(el) }
   end
 end
