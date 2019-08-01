@@ -146,7 +146,7 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
   INVALID_DIRS = %w[roles tasks group_vars host_vars].freeze
 
   # Given a Pathname, determine if it includes invalid directories so it can be
-  # removed from consideration.
+  # removed from consideration, and also ignore hidden files and directories.
   #
   # Content borrowed from awx and modified from
   #
@@ -155,6 +155,6 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
   def playbook_dir?(filepath)
     elements = Pathname.new(filepath).each_filename.to_a
 
-    elements.none? { |el| INVALID_DIRS.include?(el) }
+    elements.none? { |el| el.starts_with?('.') || INVALID_DIRS.include?(el) }
   end
 end
