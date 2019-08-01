@@ -193,6 +193,26 @@ describe ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationS
         expect(playbooks_for(record)).to eq(%w[ansible_project/hello_world.yml])
       end
     end
+
+    context "with a requirements.yml" do
+      let(:requirements_repo) { File.join(clone_dir, "hello_requirements") }
+
+      let(:requirements_repo_structure) do
+        <<~FILES
+          hello_world.yml
+          requirements.yml
+        FILES
+      end
+
+      it "finds only playbooks" do
+        Spec::Support::FakeAnsibleRepo.generate(requirements_repo, requirements_repo_structure)
+
+        params[:scm_url] = "file://#{requirements_repo}"
+        record           = build_record
+
+        expect(playbooks_for(record)).to eq(%w[hello_world.yml])
+      end
+    end
   end
 
   describe "#update_in_provider" do

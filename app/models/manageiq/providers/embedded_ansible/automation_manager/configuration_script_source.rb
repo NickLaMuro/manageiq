@@ -87,10 +87,16 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
   end
 
   def playbooks_in_git_repository
-    git_repository.update_repo
-    git_repository.with_worktree do |worktree|
-      worktree.ref = scm_branch
-      worktree.blob_list.grep(/\.ya?ml$/)
+    [].tap do |playbooks|
+      git_repository.update_repo
+      git_repository.with_worktree do |worktree|
+        worktree.ref = scm_branch
+        worktree.blob_list do |root, entry|
+          next unless playbook?(entry, worktree)
+
+          playbooks << "#{root}#{entry[:name]}"
+        end
+      end
     end
   end
 
@@ -105,5 +111,32 @@ class ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ConfigurationScri
     result << "\n\n"
     result << error.backtrace.join("\n")
     result.mb_chars.limit(ERROR_MAX_SIZE)
+  end
+
+  private
+
+  # Content borrowed from awx
+  #
+  #  https://github.com/ansible/awx/blob/128fa894/awx/main/utils/ansible.py#L17
+  #
+  VALID_PLAYBOOK_CHECK = /^\s*?-?\s*?(?:hosts|include|import_playbook):\s*?.*?$/.freeze
+
+  # Confirms two things:
+  #
+  #   - The file extension is a yaml extension
+  #   - The content of the file has one line that matches VALID_PLAYBOOK_CHECK
+  #
+  # Content borrowed from awx and modified from
+  #
+  #   https://github.com/ansible/awx/blob/128fa894/awx/main/utils/ansible.py#L39-L66
+  #
+  def playbook?(entry, worktree)
+    return false unless entry[:name].match?(/\.ya?ml$/)
+
+    worktree.read_entry(entry).lines.each do |line|
+      return true if line.match?(VALID_PLAYBOOK_CHECK)
+    end
+
+    false
   end
 end

@@ -168,12 +168,16 @@ class GitWorktree
   end
 
   # Like "file_list", but doesn't return directories
-  def blob_list
+  def blob_list(&block)
     tree = lookup_commit_tree
-    return [] unless tree
+    if block_given?
+      tree.walk_blobs(:preorder, &block)
+    else
+      return [] unless tree
 
-    [].tap do |blobs|
-      tree.walk_blobs(:preorder) { |root, entry| blobs << "#{root}#{entry[:name]}" }
+      [].tap do |blobs|
+        tree.walk_blobs(:preorder) { |root, entry| blobs << "#{root}#{entry[:name]}" }
+      end
     end
   end
 
