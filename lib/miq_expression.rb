@@ -1450,7 +1450,7 @@ class MiqExpression
     # 5. SELECT 1 FROM secondary_table WHERE name = 'foo' [AND type = 'type']
     join_on_clause = join.right.expr
     if join_on_clause.respond_to?(:right)
-      query.where(join_on_clause.right)
+      query.where(join_on_clause.right) if join_on_clause.right.present?
       join_on_clause = join_on_clause.left
     end
 
