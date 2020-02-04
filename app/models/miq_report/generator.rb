@@ -81,11 +81,7 @@ module MiqReport::Generator
   end
 
   def get_include_for_find
-    get_include.deep_merge(include_for_find || {}).presence
-  end
-
-  def get_include
-    include_as_hash(include.presence || invent_report_includes)
+    include_as_hash(include.presence || invent_report_includes).deep_merge(include_for_find || {}).presence
   end
 
   def invent_includes
@@ -258,14 +254,19 @@ module MiqReport::Generator
   def generate_daily_metric_rollup_results(options = {})
     unless conditions.nil?
       conditions.preprocess_options = {:vim_performance_daily_adhoc => (time_profile && time_profile.rollup_daily_metrics)}
+      exp_sql, exp_includes = conditions.to_sql
+      # only_cols += conditions.columns_for_sql # Add cols references in expression to ensure they are present for evaluation
     end
 
+    # TODO: add .select(only_cols)
+    db_includes = get_include_for_find
     results = Metric::Helper.find_for_interval_name('daily', time_profile || tz, db_klass)
-                            .where(where_clause)
+                            .where(where_clause).where(exp_sql)
                             .where(options[:where_clause])
                             .where(:timestamp => performance_report_time_range)
-                            .includes(get_include_for_find)
-                            .references(db_klass.includes_to_references(get_include))
+                            .includes(db_includes)
+                            .references(db_klass.includes_to_references(db_includes))
+                            .includes(exp_includes || [])
                             .limit(options[:limit])
     results = Rbac.filtered(results, :class        => db,
                                      :filter       => conditions,
@@ -276,14 +277,17 @@ module MiqReport::Generator
 
   # Ad-hoc performance reports
   def generate_interval_metric_results(options = {})
+    # Only build where clause from expression for hourly report. It will not work properly for daily because many values are rolled up from hourly.
+    exp_sql, exp_includes = conditions.to_sql(tz) unless conditions.nil? || db_klass.respond_to?(:instances_are_derived?)
+
     results = db_klass.with_interval_and_time_range(interval, performance_report_time_range)
                       .where(where_clause)
                       .where(options[:where_clause])
+                      .where(exp_sql)
                       .includes(get_include_for_find)
-                      .references(db_klass.includes_to_references(get_include))
+                      .includes(exp_includes || [])
                       .limit(options[:limit])
 
-    # Rbac will only add miq_expression for hourly report. It will not work properly for daily because many values are rolled up from hourly.
     results = Rbac.filtered(results, :class        => db,
                                      :filter       => conditions,
                                      :userid       => options[:userid],
@@ -313,7 +317,6 @@ module MiqReport::Generator
       :targets          => targets,
       :filter           => conditions,
       :include_for_find => get_include_for_find,
-      :references       => get_include,
       :where_clause     => where_clause,
       :skip_counts      => true
     )

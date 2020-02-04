@@ -638,7 +638,7 @@ RSpec.describe Rbac::Filterer do
       end
 
       it "does not add references without includes" do
-        expect(subject).to receive(:include_references).with(anything, Vm, nil, nil).and_call_original
+        expect(subject).to receive(:include_references).with(anything, Vm, nil, nil, true).and_call_original
         results
       end
 
@@ -652,7 +652,7 @@ RSpec.describe Rbac::Filterer do
         end
 
         it "includes references" do
-          expect(subject).to receive(:include_references).with(anything, ::Vm, nil, :host => {})
+          expect(subject).to receive(:include_references).with(anything, ::Vm, nil, {:host => {}}, false)
                                                          .and_call_original
           expect(subject).to receive(:warn).never
           results
@@ -669,7 +669,7 @@ RSpec.describe Rbac::Filterer do
         end
 
         it "does not add references since there isn't a SQL filter" do
-          expect(subject).to receive(:include_references).with(anything, Vm, {:evm_owner => {}}, nil).and_call_original
+          expect(subject).to receive(:include_references).with(anything, Vm, {:evm_owner => {}}, nil, true).and_call_original
           results
         end
 
@@ -678,7 +678,8 @@ RSpec.describe Rbac::Filterer do
           let(:results)           { subject.search(search_with_where).first }
 
           it "will try to skip references to begin with" do
-            expect(subject).to receive(:include_references).with(anything, Vm, {:evm_owner => {}}, nil).and_call_original
+            expect(subject).to receive(:include_references).with(anything, Vm, {:evm_owner => {}}, nil, true).and_call_original
+            expect(subject).to receive(:warn).exactly(4).times
             results
           end
 
@@ -688,7 +689,8 @@ RSpec.describe Rbac::Filterer do
             let(:results)     { subject.search(null_search).first }
 
             it "will not try to skip references" do
-              expect(subject).to receive(:include_references).with(anything, Vm, {:evm_owner => {}}, nil).and_call_original
+              expect(subject).to receive(:include_references).with(anything, Vm, {:evm_owner => {}}, nil, false).and_call_original
+              expect(subject).to receive(:warn).never
               results
             end
           end
@@ -2509,27 +2511,28 @@ RSpec.describe Rbac::Filterer do
   describe "#include_references (private)" do
     subject { described_class.new }
 
+    let(:skip)             { false }
     let(:klass)            { VmOrTemplate }
     let(:scope)            { klass.all }
     let(:include_for_find) { { :miq_server => {} } }
     let(:exp_includes)     { { :host => {} } }
 
     it "adds include_for_find .references to the scope" do
-      method_args      = [scope, klass, include_for_find, nil]
+      method_args      = [scope, klass, include_for_find, nil, skip]
       resulting_scope  = subject.send(:include_references, *method_args)
 
       expect(resulting_scope.references_values).to eq(%w[miq_servers])
     end
 
     it "adds exp_includes .references to the scope" do
-      method_args      = [scope, klass, nil, exp_includes]
+      method_args      = [scope, klass, nil, exp_includes, skip]
       resulting_scope  = subject.send(:include_references, *method_args)
 
       expect(resulting_scope.references_values).to eq(%w[hosts])
     end
 
     it "adds include_for_find and exp_includes .references to the scope" do
-      method_args      = [scope, klass, include_for_find, exp_includes]
+      method_args      = [scope, klass, include_for_find, exp_includes, skip]
       resulting_scope  = subject.send(:include_references, *method_args)
 
       expect(resulting_scope.references_values).to eq(%w[miq_servers hosts])
@@ -2540,10 +2543,86 @@ RSpec.describe Rbac::Filterer do
       let(:include_for_find) { { :resource => {} } }
 
       it "does not add .references to the scope" do
-        method_args      = [scope, klass, include_for_find, nil]
+        method_args      = [scope, klass, include_for_find, nil, skip]
         resulting_scope  = subject.send(:include_references, *method_args)
 
         expect(resulting_scope.references_values).to eq([])
+      end
+    end
+
+    context "when skip is passed as true" do
+      let(:skip) { true }
+
+      it "does not add .references to the scope" do
+        method_args      = [scope, klass, include_for_find, exp_includes, skip]
+        resulting_scope  = subject.send(:include_references, *method_args)
+
+        expect(resulting_scope.references_values).to eq([])
+      end
+
+      context "when the scope is invalid without .references" do
+        let(:scope)           { klass.where("hosts.name = 'foo'") }
+        let(:method_args)     { [scope, klass, include_for_find, exp_includes, skip] }
+        let(:resulting_scope) { subject.send(:include_references, *method_args) }
+
+        let(:explain_error_match) do
+          Regexp.new(Regexp.escape(<<~PG_ERR.chomp))
+            PG::UndefinedTable: ERROR:  missing FROM-clause entry for table "hosts"
+            LINE 1: EXPLAIN SELECT "vms".* FROM "vms" WHERE (hosts.name = 'foo')
+                                                             ^
+            : EXPLAIN SELECT "vms".* FROM "vms" WHERE (hosts.name = 'foo')
+          PG_ERR
+        end
+
+        it "adds .references to the scope" do
+          allow(subject).to receive(:warn)
+          expect(resulting_scope.references_values).to eq(%w[miq_servers hosts])
+        end
+
+        it "warns that there was an issue in test mode" do
+          # This next couple of lines is just used to check that some of the
+          # backtrace that we are dumping into the logs is what we expect will
+          # for sure be there, and not try to match the entire trace.
+          #
+          # Does a bit of line addition to avoid this being too brittle and
+          # breaking easily, but expect it to break if you update
+          # Rbac::Filterer#include_references
+          method_file, method_line = subject.method(:include_references).source_location
+          explain_stacktrace_includes = [
+            "#{method_file}:#{method_line + 10}:in `block in include_references'",
+            Thread.current.backtrace[1].gsub(/:\d*:/) { |sub| ":#{sub.tr(":", "").to_i + 7}:" }
+          ]
+
+          expect(subject).to receive(:warn).with("There was an issue with the Rbac filter without references!").ordered
+          expect(subject).to receive(:warn).with("Consider trying to fix this edge case in Rbac::Filterer!  Error Below:").ordered
+          expect(subject).to receive(:warn).with(explain_error_match).ordered
+          expect(subject).to receive(:warn).with(array_including(explain_stacktrace_includes)).ordered
+          resulting_scope
+        end
+
+        it "warns that there was an issue in development mode" do
+          expect(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("developement"))
+
+          # See above
+          method_file, method_line = subject.method(:include_references).source_location
+          explain_stacktrace_includes = [
+            "#{method_file}:#{method_line + 10}:in `block in include_references'",
+            Thread.current.backtrace[1].gsub(/:\d*:/) { |sub| ":#{sub.tr(":", "").to_i + 7}:" }
+          ]
+
+          expect(subject).to receive(:warn).with("There was an issue with the Rbac filter without references!").ordered
+          expect(subject).to receive(:warn).with("Consider trying to fix this edge case in Rbac::Filterer!  Error Below:").ordered
+          expect(subject).to receive(:warn).with(explain_error_match).ordered
+          expect(subject).to receive(:warn).with(array_including(explain_stacktrace_includes)).ordered
+          resulting_scope
+        end
+
+        it "does not warn that there was an issue in production mode" do
+          expect(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production"))
+
+          expect(subject).to receive(:warn).never
+          resulting_scope
+        end
       end
     end
   end
