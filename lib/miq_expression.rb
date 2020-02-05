@@ -1452,9 +1452,17 @@ class MiqExpression
 
     # 5. SELECT 1 FROM secondary_table WHERE name = 'foo' [AND type = 'type']
     join_on_clause = join.right.expr
-    if join_on_clause.respond_to?(:right)
-      query.where(join_on_clause.right) if join_on_clause.right.present?
-      join_on_clause = join_on_clause.left
+
+
+    if join_on_clause.respond_to?(:right) && join_on_clause.right.present?
+      # Add the field's table to the where clause (it can be the left or right node)
+      if join_on_clause.right.right.relation.name == field.model.table_name
+        query.where(join_on_clause.left)
+        join_on_clause = join_on_clause.right
+      else
+        query.where(join_on_clause.right)
+        join_on_clause = join_on_clause.left
+      end
     end
 
     # 6. SELECT [secondary_table_id] FROM secondary_table WHERE name = 'foo' AND type = 'type'
