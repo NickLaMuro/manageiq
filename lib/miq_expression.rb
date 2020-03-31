@@ -1453,14 +1453,22 @@ class MiqExpression
     # 5. SELECT 1 FROM secondary_table WHERE name = 'foo' [AND type = 'type']
     join_on_clause = join.right.expr
 
-
-    if join_on_clause.respond_to?(:right) && join_on_clause.right.present?
-      # Add the field's table to the where clause (it can be the left or right node)
-      if join_on_clause.right.right.relation.name == field.model.table_name
-        query.where(join_on_clause.left)
-        join_on_clause = join_on_clause.right
+    while join_on_clause.kind_of?(Arel::Nodes::And) do
+      if join_on_clause.right
+        # Add the field's table join to the where clause (it can be the left or right node)
+        if join_on_clause.right.right.try(:relation)&.name == field.model.table_name
+          # case: join_on_clause == "type = 'x' AND secondary_table.main_id = main_table.id"
+          # put type = 'x' into the where clause, prune down the rest of the query
+          query.where(join_on_clause.left)
+          join_on_clause = join_on_clause.right
+        else
+          # case: join_on_clause == "secondary_table.main_id = main_table.id AND type = 'x'"
+          # put type = 'x' into the where clause, prune down the rest of the query
+          query.where(join_on_clause.right)
+          join_on_clause = join_on_clause.left
+        end
       else
-        query.where(join_on_clause.right)
+        # sometimes there are extra AND nodes in here - prune them out
         join_on_clause = join_on_clause.left
       end
     end
