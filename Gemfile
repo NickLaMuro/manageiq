@@ -24,7 +24,8 @@ end
 gem "manageiq-schema",         :git => "https://github.com/jrafanie/manageiq-schema.git",         :branch => "try_rails_5_2"
 
 # Unmodified gems
-gem "activerecord-virtual_attributes", "~>1.5.0"
+gem "activerecord-virtual_attributes", :git => "https://github.com/ManageIQ/activerecord-virtual_attributes.git", :branch => "master"
+
 gem "activerecord-session_store",     "~>1.1"
 gem "acts_as_tree",                   "~>2.7" # acts_as_tree needs to be required so that it loads before ancestry
 gem "ancestry",                       "~>3.0.7",       :require => false
