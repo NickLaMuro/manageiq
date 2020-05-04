@@ -90,6 +90,10 @@ gem "ruport",                         "=1.7.0.3",  :source => "https://rubygems.
 # https://github.com/jeremyevans/ruby-american_date
 gem "american_date"
 
+# Rails 6 branch patches (DO NOT MERGE!)
+# gem "activerecord-id_regions", :git    => "https://github.com/NickLaMuro/activerecord-id_regions",
+#                                :branch => "rails-6"
+
 # Make sure to tag your new bundler group with the manageiq_default group in addition to your specific bundler group name.
 # This default is used to automatically require all of our gems in processes that don't specify which bundler groups they want.
 #
@@ -174,7 +178,8 @@ end
 
 group :ovirt, :manageiq_default do
   manageiq_plugin "manageiq-providers-ovirt"
-  gem "ovirt_metrics",                  "~>3.0.1",       :require => false
+  gem "ovirt_metrics", :git    => "https://github.com/NickLaMuro/ovirt_metrics",
+                       :branch => "rails-6"
 end
 
 group :scvmm, :manageiq_default do
@@ -183,6 +188,8 @@ end
 
 group :vmware, :manageiq_default do
   manageiq_plugin "manageiq-providers-vmware"
+  gem "vmware_web_service", :git    => "https://github.com/NickLaMuro/vmware_web_service",
+                            :branch => "rails-6"
 end
 
 ### shared dependencies
@@ -204,11 +211,11 @@ group :rest_api, :manageiq_default do
   manageiq_plugin "manageiq-api"
 end
 
-group :graphql_api do
-  # Note, you still need to mount the engine in the UI / rest api processes:
-  # mount ManageIQ::GraphQL::Engine, :at => '/graphql'
-  manageiq_plugin "manageiq-graphql"
-end
+# group :graphql_api do
+#   # Note, you still need to mount the engine in the UI / rest api processes:
+#   # mount ManageIQ::GraphQL::Engine, :at => '/graphql'
+#   manageiq_plugin "manageiq-graphql"
+# end
 
 group :scheduler, :manageiq_default do
   gem "rufus-scheduler"
@@ -230,7 +237,8 @@ end
 
 group :ui_dependencies do # Added to Bundler.require in config/application.rb
   manageiq_plugin "manageiq-decorators"
-  manageiq_plugin "manageiq-ui-classic"
+  gem "manageiq-ui-classic",                        :git    => "https://github.com/NickLaMuro/manageiq-ui-classic",
+                                                    :branch => "rails-6"
   # Modified gems (forked on Github)
   gem "jquery-rjs",                                 :git    => "https://github.com/NickLaMuro/jquery-rjs",
                                                     :branch => "rails-6"
