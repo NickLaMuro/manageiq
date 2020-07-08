@@ -53,9 +53,11 @@ namespace :integration do
   task :ui_ready => :run_server do
     require 'net/http'
 
+    foreman_port = ENV['FOREMAN_PORT'] || '3000'
+
     loop do
       begin
-        Net::HTTP.get_response(URI("http://localhost:3000/api/ping")).body == 'pong'
+        Net::HTTP.get_response(URI("http://localhost:#{foreman_port}/api/ping")).body == 'pong'
         break
       rescue Errno::ECONNREFUSED
         sleep 2
