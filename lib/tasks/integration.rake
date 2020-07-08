@@ -53,13 +53,17 @@ namespace :integration do
   task :ui_ready => :run_server do
     require 'net/http'
 
+    retries      = 0
     foreman_port = ENV['FOREMAN_PORT'] || '3000'
 
     loop do
       begin
         Net::HTTP.get_response(URI("http://localhost:#{foreman_port}/api/ping")).body == 'pong'
         break
-      rescue Errno::ECONNREFUSED
+      rescue Errno::ECONNREFUSED => error
+        raise error unless retries < 15
+
+        retries += 1
         sleep 2
         retry
       end
