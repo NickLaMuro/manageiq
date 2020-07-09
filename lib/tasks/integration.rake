@@ -6,7 +6,7 @@ RUN_SINGLE_WORKER_BIN   = Rails.root.join('lib', 'workers', 'bin', 'run_single_w
 
 namespace :integration do
   desc "Seed the database"
-  task :seed => [:env, "test:vmdb:setup", "evm:foreman:seed", "evm:compile_assets"]
+  task :seed => [:env, "test:vmdb:setup", "evm:foreman:seed", :compile_assets]
 
   desc "Setup the database"
   task :setup => [:db_setup, "evm:foreman:setup"] do
@@ -50,6 +50,7 @@ namespace :integration do
     File.write(INTEGRATION_PROCFILE, ui_config, :mode => "a")
   end
 
+  # Check if a UI worker is running
   task :ui_ready => :run_server do
     require 'net/http'
 
@@ -75,6 +76,14 @@ namespace :integration do
   task :env do
     ENV["RAILS_ENV"] = "integration"
     ENV["RAILS_SERVE_STATIC_FILES"] = "true"
+  end
+
+  task :compile_assets do
+    if ENV['CYPRESS_DEV']
+      Rake::Task['update:ui'].invoke
+    else
+      Rake::Task['evm:compile_assets'].invoke
+    end
   end
 
   task :db_setup => [:env, :environment] do
