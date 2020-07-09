@@ -5,17 +5,17 @@ INTEGRATION_PROCFILE    = INTEGRATION_TMP_DIR.join('Procfile')
 RUN_SINGLE_WORKER_BIN   = Rails.root.join('lib', 'workers', 'bin', 'run_single_worker.rb')
 
 namespace :integration do
-  desc "Seed the database"
+  desc "Seed the database and configure assets for integration tests"
   task :seed => [:env, "test:vmdb:setup", "evm:foreman:seed", :compile_assets]
 
-  desc "Setup the database"
+  desc "Setup the database for integration tests"
   task :setup => [:db_setup, "evm:foreman:setup"] do
     mkdir_p INTEGRATION_TMP_DIR
     rm_f    INTEGRATION_PROCFILE
     touch   INTEGRATION_PROCFILE
   end
 
-  desc "Run a foreman server in the background"
+  desc "Run a foreman server in the background for integration tests"
   task :run_server => [:setup] do
     pid = File.read(INTEGRATION_FOREMAN_PID).to_i if File.exist?(INTEGRATION_FOREMAN_PID)
 
@@ -34,7 +34,7 @@ namespace :integration do
     end
   end
 
-  desc "Stop server"
+  desc "Stop server for integration tests"
   task :stop_server do
     if File.exists?(INTEGRATION_FOREMAN_PID)
       Process.kill("TERM", File.read(INTEGRATION_FOREMAN_PID).to_i)
@@ -44,7 +44,7 @@ namespace :integration do
     end
   end
 
-  desc "With a UI worker"
+  desc "With a UI worker for integration tests"
   task :with_ui => :setup do
     ui_config = "ui: env PORT=$PORT ruby #{RUN_SINGLE_WORKER_BIN} MiqUiWorker\n"
     File.write(INTEGRATION_PROCFILE, ui_config, :mode => "a")
