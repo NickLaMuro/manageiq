@@ -78,11 +78,12 @@ namespace :integration do
     ENV["RAILS_SERVE_STATIC_FILES"] = "true"
   end
 
-  task :compile_assets do
-    if ENV['CYPRESS_DEV']
-      Rake::Task['update:ui'].invoke
+  task :compile_assets do |rake_task|
+    app_prefix = rake_task.name.chomp('integration:compile_assets')
+    if ENV["CYPRESS_DEV"]
+      Rake::Task["#{app_prefix}update:ui"].invoke
     else
-      Rake::Task['evm:compile_assets'].invoke
+      Rake::Task["#{app_prefix}evm:compile_assets"].invoke
     end
   end
 
