@@ -76,7 +76,7 @@ module Authenticator
           else
             # If role_mode == database we will only use the external system for authentication. Also, the user must exist in our database
             # otherwise we will fail authentication
-            user_or_taskid = lookup_by_identity(username, request)
+            user_or_taskid = lookup_by_identity(username, request: request)
             user_or_taskid ||= autocreate_user(username)
 
             unless user_or_taskid
@@ -199,7 +199,7 @@ module Authenticator
       [!!result, username]
     end
 
-    def lookup_by_identity(username, *_args)
+    def lookup_by_identity(username, request: nil, lookup_scope: nil)
       case_insensitive_find_by_userid(username)
     end
 
@@ -241,9 +241,10 @@ module Authenticator
       nil
     end
 
-    def case_insensitive_find_by_userid(username)
-      user =  User.lookup_by_userid(username)
-      user || User.in_my_region.where('lower(userid) = ?', username.downcase).order(:lastlogon).last
+    def case_insensitive_find_by_userid(username, lookup_scope: nil)
+      base =  User::LOOKUP_SCOPES[lookup_scope] ? User.send(lookup_scope) : User
+      user =  base.lookup_by_userid(username)
+      user || base.in_my_region.where('lower(userid) = ?', username.downcase).order(:lastlogon).last
     end
 
     def userid_for(_identity, username)

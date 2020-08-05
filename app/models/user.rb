@@ -57,6 +57,8 @@ class User < ApplicationRecord
 
   scope :with_same_userid, ->(id) { where(:userid => User.where(:id => id).pluck(:userid)) }
 
+  LOOKUP_SCOPES = [:api_includes].inject({}) {|h,i| h[i] = i; h}.freeze
+
   scope :api_includes, -> { eager_load(:current_group => [:miq_user_role, :tenant]) }
 
   def self.with_roles_excluding(identifier)
@@ -215,8 +217,9 @@ class User < ApplicationRecord
     authenticator(username).authenticate_with_http_basic(username, password, request, options)
   end
 
-  def self.lookup_by_identity(username)
-    authenticator(username).lookup_by_identity(username)
+  def self.lookup_by_identity(username, lookup_scope: :none)
+    user = authenticator(username).lookup_by_identity(username, lookup_scope: lookup_scope)
+    user
   end
 
   def self.authorize_user(userid)
