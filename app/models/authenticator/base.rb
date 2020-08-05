@@ -200,7 +200,7 @@ module Authenticator
     end
 
     def lookup_by_identity(username, request: nil, lookup_scope: nil)
-      case_insensitive_find_by_userid(username)
+      @lookup ||= case_insensitive_find_by_userid(username, lookup_scope: lookup_scope)
     end
 
     # FIXME: LDAP
