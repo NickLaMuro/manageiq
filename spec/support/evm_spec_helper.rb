@@ -9,6 +9,8 @@ env_level ||= VMDBLogger::INFO
 $log.level = env_level
 Rails.logger.level = env_level
 
+require 'rspec/mocks'
+
 module EvmSpecHelper
   extend RSpec::Mocks::ExampleMethods
 
