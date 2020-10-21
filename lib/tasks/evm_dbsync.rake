@@ -29,12 +29,12 @@ namespace :evm do
 end
 
 # Always run evm:dbsync:resync_excludes after migrations
-namespace :db do
-  task :migrate do
-    if !defined?(ENGINE_ROOT)
-      Rake::Task['evm:dbsync:resync_excludes'].invoke
-    else
-      Rake::Task['app:evm:dbsync:resync_excludes'].invoke
-    end
-  end
-end
+# namespace :db do
+#   task :migrate do
+#     if !defined?(ENGINE_ROOT)
+#       Rake::Task['evm:dbsync:resync_excludes'].invoke
+#     else
+#       Rake::Task['app:evm:dbsync:resync_excludes'].invoke
+#     end
+#   end
+# end
