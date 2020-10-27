@@ -29,7 +29,7 @@ class MiqWorker::Runner
   end
 
   def self.corresponding_model
-    parent
+    module_parent
   end
 
   def initialize(cfg = {})
