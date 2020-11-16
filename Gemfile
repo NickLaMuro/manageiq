@@ -208,6 +208,7 @@ group :graphql_api do
   # Note, you still need to mount the engine in the UI / rest api processes:
   # mount ManageIQ::GraphQL::Engine, :at => '/graphql'
   manageiq_plugin "manageiq-graphql"
+  gem 'graphql-preload',           :git  => 'https://github.com/Envek/graphql-preload'
 end
 
 group :scheduler, :manageiq_default do
