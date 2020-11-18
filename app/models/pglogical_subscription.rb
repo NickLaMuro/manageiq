@@ -1,6 +1,32 @@
 require 'pg/dsn_parser'
 require 'pg/logical_replication'
 
+
+##### DEBUG #####
+require 'pg/logical_replication/client'
+
+module PG
+  module LogicalReplication
+    class Client
+      private
+
+      def typed_exec(sql, *params)
+        puts
+        puts
+        puts connection.class.inspect
+        puts connection.inspect
+        puts sql.inspect
+        puts
+
+        result = connection.async_exec(sql, params, nil, PG::BasicTypeMapForQueries.new(connection))
+        result.map_types!(PG::BasicTypeMapForResults.new(connection))
+      end
+    end
+  end
+end
+##### DEBUG #####
+
+
 class PglogicalSubscription < ActsAsArModel
   set_columns_hash(
     :id                   => :string,
