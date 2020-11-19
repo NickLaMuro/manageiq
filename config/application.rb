@@ -20,6 +20,12 @@ require 'action_cable/engine'
 #
 ENV['BUNDLER_GROUPS'] ||= "manageiq_default,ui_dependencies"
 
+begin
+  ::Rails::SourceAnnotationExtractor
+rescue
+  ::Rails::SourceAnnotationExtractor = ::SourceAnnotationExtractor
+end
+
 if defined?(Bundler)
   groups = ENV['BUNDLER_GROUPS'].split(",").collect(&:to_sym)
 
