@@ -11,12 +11,12 @@ module PG
       private
 
       def typed_exec(sql, *params)
-        puts
-        puts
-        puts connection.class.inspect
-        puts connection.inspect
-        puts sql.inspect
-        puts
+        # puts
+        # puts
+        # puts connection.class.inspect
+        # puts connection.inspect
+        # puts sql.inspect
+        # puts
 
         result = connection.async_exec(sql, params, nil, PG::BasicTypeMapForQueries.new(connection))
         result.map_types!(PG::BasicTypeMapForResults.new(connection))
