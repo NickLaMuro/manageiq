@@ -39,8 +39,8 @@ gem "default_value_for",              "~>3.3"
 gem "docker-api",                     "~>1.33.6",      :require => false
 gem "elif",                           "=0.1.0",        :require => false
 gem "fast_gettext",                   "~>2.0.1"
-gem "gettext_i18n_rails",             "~>1.7.2"
-gem "gettext_i18n_rails_js",          "~>1.3.0"
+# gem "gettext_i18n_rails",             "~>1.7.2"
+# gem "gettext_i18n_rails_js",          "~>1.3.0"
 gem "hamlit",                         "~>2.11.0"
 gem "inifile",                        "~>3.0",         :require => false
 gem "inventory_refresh",              "~>0.2.0",       :require => false
@@ -67,7 +67,7 @@ gem "pg-dsn_parser",                  "~>0.1.0",       :require => false
 gem "psych",                          "~>3.1",         :require => false # This can be dropped once we drop ruby 2.5
 gem "query_relation",                 "~>0.1.0",       :require => false
 gem "rails",                          "~>6.0.0"
-gem "rails-i18n",                     "~>6.x"
+# gem "rails-i18n",                     "~>6.x"
 gem "rake",                           ">=12.3.3",      :require => false
 gem "rest-client",                    "~>2.1.0",       :require => false
 gem "ripper_ruby_parser",             "~>1.5.1",       :require => false
