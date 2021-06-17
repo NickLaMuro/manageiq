@@ -208,6 +208,7 @@ module Ansible
         env_vars_hash   = env_vars.merge(cred_env_vars).merge(python_env)
         extra_vars_hash = extra_vars.merge(cred_extra_vars)
 
+        create_config_file(base_dir, env_vars_hash)
         create_hosts_file(base_dir, hosts)
         create_extra_vars_file(base_dir, extra_vars_hash)
         create_cmdline_file(base_dir, command_line_hash)
@@ -328,6 +329,19 @@ module Ansible
         end
 
         [command_line, env_vars, extra_vars]
+      end
+
+      def create_config_file(dir, env)
+        config_file           = File.join(dir, "ansible.cfg")
+        env["ANSIBLE_CONFIG"] = config_file
+
+        File.write(config_file, <<~ANSIBLE_CONFIG)
+          [defaults]
+          local_tmp       = /tmp/.ansible_local_tmp
+          remote_tmp      = /tmp/.ansible_remote_tmp
+          roles_path      = /root/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:/var/www/miq/vmdb/content/ansible_consolidated/roles
+          stdout_callback = json
+        ANSIBLE_CONFIG
       end
 
       def create_hosts_file(dir, hosts)
