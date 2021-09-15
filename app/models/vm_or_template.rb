@@ -8,6 +8,7 @@ class VmOrTemplate < ApplicationRecord
   include RetirementMixin
   include ScanningMixin
   include SupportsFeatureMixin
+  include ServiceIdMixin
 
   self.table_name = 'vms'
   has_ancestry
